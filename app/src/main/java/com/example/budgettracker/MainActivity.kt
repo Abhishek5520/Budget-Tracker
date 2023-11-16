@@ -1,13 +1,16 @@
 package com.example.budgettracker
 
+import android.R.id.message
 import android.app.AlertDialog
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -23,11 +26,22 @@ import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
 import com.github.mikephil.charting.formatter.PercentFormatter
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.popup.view.*
+import kotlinx.android.synthetic.main.activity_main.addBtn
+import kotlinx.android.synthetic.main.activity_main.balance
+import kotlinx.android.synthetic.main.activity_main.bud1
+import kotlinx.android.synthetic.main.activity_main.deleteAllBtn
+import kotlinx.android.synthetic.main.activity_main.exp1
+import kotlinx.android.synthetic.main.activity_main.left2
+import kotlinx.android.synthetic.main.activity_main.nmid
+import kotlinx.android.synthetic.main.activity_main.recycler
+import kotlinx.android.synthetic.main.activity_main.right2
+import kotlinx.android.synthetic.main.activity_main.totbal
+import kotlinx.android.synthetic.main.popup.view.cnlBtn2
+import kotlinx.android.synthetic.main.popup.view.delBtn2
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.util.Calendar.getInstance
+import android.Manifest
 
 
 class MainActivity : AppCompatActivity() {
@@ -40,10 +54,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var db : AppDatabase
     private lateinit var mpChartView: PieChart
 
+    private val PERMISSION_SEND_SMS = 123
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        requestSmsPermission()
 
         transactions = arrayListOf()
         deleteallbtn = findViewById(R.id.deleteAllBtn)
@@ -132,6 +150,23 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+
+    private fun requestSmsPermission() {
+
+        // check permission is given
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.RECEIVE_SMS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // request permission (see result in onRequestPermissionsResult() method)
+            ActivityCompat.requestPermissions(
+                this, arrayOf<String>(Manifest.permission.RECEIVE_SMS),
+                PERMISSION_SEND_SMS
+            )
+        }
+    }
+
     private fun fetchAll(){
         GlobalScope.launch {
             transactions = db.transactionDao().getAll()
@@ -192,27 +227,27 @@ class MainActivity : AppCompatActivity() {
 
         if(totalEntertainment != 0f){
             entries.add(PieEntry(totalEntertainment, "Entertainment"))
-            colors.add(ContextCompat.getColor(this, R.color.c5))
+            colors.add(ContextCompat.getColor(this, color.c5))
         }
 
         if(totalNecessity != 0f){
             entries.add(PieEntry(totalNecessity, "Necessity"))
-            colors.add(ContextCompat.getColor(this, R.color.c2))
+            colors.add(ContextCompat.getColor(this, color.c2))
         }
 
         if(totalClothing != 0f){
             entries.add(PieEntry(totalClothing, "Clothing"))
-            colors.add(ContextCompat.getColor(this, R.color.c3))
+            colors.add(ContextCompat.getColor(this, color.c3))
         }
 
         if(totalFood != 0f){
             entries.add(PieEntry(totalFood, "Food"))
-            colors.add(ContextCompat.getColor(this, R.color.c1))
+            colors.add(ContextCompat.getColor(this, color.c1))
         }
 
         if(totalTravel != 0f){
             entries.add(PieEntry(totalTravel, "Travel"))
-            colors.add(ContextCompat.getColor(this, R.color.c4))
+            colors.add(ContextCompat.getColor(this, color.c4))
         }
 
         val dataSet = PieDataSet(entries,"")
@@ -273,10 +308,10 @@ class MainActivity : AppCompatActivity() {
 
         balance.text = "₹ %.2f".format(totalAmount)
         if(totalAmount > 0){
-            balance.setTextColor(ContextCompat.getColor(this,R.color.green))
+            balance.setTextColor(ContextCompat.getColor(this, color.green))
         }
         else if(totalAmount < 0){
-            balance.setTextColor(ContextCompat.getColor(this,R.color.red))
+            balance.setTextColor(ContextCompat.getColor(this, color.red))
         }
         left2.text = "₹ %.2f".format(budgetAmount)
         right2.text = "₹ %.2f".format(expenseAmount)
@@ -343,7 +378,7 @@ class MainActivity : AppCompatActivity() {
             undoDelete()
         }
             .setActionTextColor(ContextCompat.getColor(this, color.red))
-            .setTextColor(ContextCompat.getColor(this, R.color.white))
+            .setTextColor(ContextCompat.getColor(this, color.white))
             .show()
     }
 

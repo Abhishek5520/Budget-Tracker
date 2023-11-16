@@ -1,11 +1,13 @@
 package com.example.budgettracker
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.SyncStateContract.Helpers.insert
 import android.telephony.SmsMessage
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.room.Room
 import com.blogspot.atifsoftwares.animatoolib.Animatoo
 import kotlinx.coroutines.GlobalScope
@@ -14,9 +16,13 @@ import java.util.*
 import java.util.regex.Pattern
 
 class MySMSReceiver : BroadcastReceiver() {
+
+
+    @SuppressLint("UnsafeProtectedBroadcastReceiver")
     override fun onReceive(context: Context, intent: Intent) {
         val bundle = intent.extras
         var str = ""
+//        Toast.makeText(context, "hhhhhhh", Toast.LENGTH_SHORT).show()
         if (bundle != null) {
             val pdus = bundle.get("pdus") as Array<Any>
             var x = ""
@@ -25,6 +31,7 @@ class MySMSReceiver : BroadcastReceiver() {
                 x = oneSMS.originatingAddress.toString()
                 str += oneSMS.messageBody.toString()
 
+                Toast.makeText(context, x, Toast.LENGTH_SHORT).show()
             }
 
             val pattern1 = Pattern.compile("SBIUPI")
@@ -35,58 +42,150 @@ class MySMSReceiver : BroadcastReceiver() {
 
             if (matcher1.find()) {
 
-                val pattern = Pattern.compile("Rs")
-                val matcher = pattern.matcher(str)
-                var amount = ""
-                if (matcher.find()) {
-                    val y = str.indexOf("Rs")
-                    val z = str.substring(y)
-                    val twoWordsName: String =
-                        z.substring(0, z.indexOf(' ', z.indexOf(' ')))
-
-                    amount = twoWordsName.substring(2)
-                    amount = amount.replace(",", "")
-                }
-
-                var d = amount.toDouble()
-
 
                 var name = ""
 
                 val patternx = Pattern.compile("credited")
                 val matcherx = patternx.matcher(str)
                 if (matcherx.find()){
+                    val pattern = Pattern.compile("Rs")
+                    val matcher = pattern.matcher(str)
+
+                    var amount = ""
+                    if (matcher.find()) {
+                        val y = str.indexOf("Rs")
+                        val z = str.substring(y)
+                        val twoWordsName: String =
+                            z.substring(0, z.indexOf(' ', z.indexOf(' ')))
+
+                        amount = twoWordsName.substring(2)
+                        amount = amount.replace(",", "")
+                    }
+
+                    var d = amount.toDouble()
+
                     val k = str.indexOf("(")
                     val m = str.indexOf(")")
                     val l = str.substring(k + 1, m)
                     name = l
                     Toast.makeText(context, d.toString()+" CREDITED from "+name, Toast.LENGTH_SHORT).show()
+
+                    val db = Room.databaseBuilder(context,
+                        AppDatabase::class.java,
+                        "transactions").allowMainThreadQueries().build()
+
+
+
+
+                    val transaction = Transaction(0,name,d,"",Calendar.getInstance().time)
+
+                    GlobalScope.launch {
+                        db.transactionDao().insertAll(transaction)
+                    }
+
+
                 }
 
                 else{
+                    val pattern = Pattern.compile("by")
+                    val matcher = pattern.matcher(str)
+
+                    var amount = ""
+                    if (matcher.find()) {
+                        val y = str.indexOf("by")
+                        val z = str.substring(y+3)
+                        val twoWordsName: String =
+                            z.substring(0, z.indexOf(' ', z.indexOf(' ')))
+
+                        amount = twoWordsName.toString()
+//                        Toast.makeText(context, twoWordsName, Toast.LENGTH_SHORT).show()
+                        amount = amount.replace(",", "")
+                    }
+
+                    var d = amount.toDouble()
+
                     val k = str.indexOf("to")
-                    val m = str.indexOf("Ref")
+                    val m = str.indexOf("Refno")
                     val l = str.substring(k + 2, m - 1)
                     name = l
                     d = d.unaryMinus()
                     Toast.makeText(context, d.unaryMinus().toString()+" DEBITED from "+name, Toast.LENGTH_SHORT).show()
+
+                    val db = Room.databaseBuilder(context,
+                        AppDatabase::class.java,
+                        "transactions").allowMainThreadQueries().build()
+
+
+
+
+                    val transaction = Transaction(0,name,d,"",Calendar.getInstance().time)
+
+                    GlobalScope.launch {
+                        db.transactionDao().insertAll(transaction)
+                    }
                 }
 
 
 
-                val db = Room.databaseBuilder(context,
-                    AppDatabase::class.java,
-                    "transactions").allowMainThreadQueries().build()
 
-
-
-
-                val transaction = Transaction(0,name,d,"",Calendar.getInstance().time)
-
-                GlobalScope.launch {
-                    db.transactionDao().insertAll(transaction)
-                }
             }
+
+//            if (matcher1.find()) {
+//
+//                Toast.makeText(context, "found", Toast.LENGTH_SHORT).show()
+//
+//                val pattern = Pattern.compile("by")
+//                val matcher = pattern.matcher(str)
+//                var amount = ""
+//                if (matcher.find()) {
+//                    val y = str.indexOf("by")
+//                    val z = str.substring(y)
+//                    val twoWordsName: String =
+//                        z.substring(0, z.indexOf(' ', z.indexOf(' ')))
+//
+//                    amount = twoWordsName.substring(2)
+//                    amount = amount.replace(",", "")
+//                }
+//
+//                var d = amount.toDouble()
+//
+//
+//                var name = ""
+//
+//                val patternx = Pattern.compile("credited")
+//                val matcherx = patternx.matcher(str)
+//                if (matcherx.find()){
+//                    val k = str.indexOf("(")
+//                    val m = str.indexOf(")")
+//                    val l = str.substring(k + 1, m)
+//                    name = l
+//                    Toast.makeText(context, d.toString()+" CREDITED from "+name, Toast.LENGTH_SHORT).show()
+//                }
+//
+//                else{
+//                    val k = str.indexOf("to")
+//                    val m = str.indexOf("Ref")
+//                    val l = str.substring(k + 2, m - 1)
+//                    name = l
+//                    d = d.unaryMinus()
+//                    Toast.makeText(context, d.unaryMinus().toString()+" DEBITED from "+name, Toast.LENGTH_SHORT).show()
+//                }
+//
+//
+//
+//                val db = Room.databaseBuilder(context,
+//                    AppDatabase::class.java,
+//                    "transactions").allowMainThreadQueries().build()
+//
+//
+//
+//
+//                val transaction = Transaction(0,name,d,"",Calendar.getInstance().time)
+//
+//                GlobalScope.launch {
+//                    db.transactionDao().insertAll(transaction)
+//                }
+//            }
 
 
 
@@ -145,5 +244,7 @@ class MySMSReceiver : BroadcastReceiver() {
         }
 
     }
+
+
 
 }
